@@ -11,13 +11,10 @@ export default function SignInScreen() {
   const [password, setPassword] = useState("");
   const auth = firebase_auth;
 
+  
   async function handleSignUp() {
     try {
-      const response = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
+      const response = await createUserWithEmailAndPassword(auth,email,password);
       console.log(response);
       alert("Sign up success. User: " + email + " signed up.");
     } catch (error) {
@@ -39,23 +36,28 @@ export default function SignInScreen() {
   return (
     <View style={styles.container}>
       <Text>Email</Text>
+
       <TextInput
         style={styles.input}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
       />
+
       <Text>Password</Text>
+
       <TextInput
         style={styles.input}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
+
       <Button title="Sign In" onPress={handleSignIn} />
       <Button title="Sign Up" onPress={handleSignUp} />
     </View>
   );
+  
 }
 
 const styles = StyleSheet.create({
