@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { firebase_auth } from "../firebaseConfig";
 import { themes } from "../theme";
 
-export default function SettingsScreen() {
-  const [themeKey, setThemeKey] = useState("red");
-  const color = themes[themeKey];
+export default function SettingsScreen({ themeKey, color, setThemeKey }) {
   const user = firebase_auth.currentUser;
 
   return (
@@ -54,7 +51,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "lightgrey",
+    backgroundColor: "white",
     paddingTop: 70,
     paddingHorizontal: 20,
   },
@@ -70,6 +67,8 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "lightgrey",
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
