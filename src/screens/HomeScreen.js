@@ -1,12 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View,} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { collection, getDocs } from "firebase/firestore";
 import { db, firebase_auth } from "../firebaseConfig";
@@ -77,7 +70,7 @@ function dateLabel(date, now) {
   });
 }
 
-export default function HomeScreen({ navigation, color = "#B8243A" }) {
+export default function HomeScreen({ navigation, color }) {
   const user = firebase_auth.currentUser;
   const uid = user?.uid;
   const firstName = user?.displayName?.trim().split(" ")[0] || "there";
@@ -296,7 +289,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 17,
     borderWidth: 1,
-    borderColor: "#DDDDDD",
+    borderColor: "lightgrey",
     marginBottom: 22,
     backgroundColor: "white",
   },
@@ -304,16 +297,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     borderWidth: 1,
-    borderColor: "#DDDDDD",
+    borderColor: "lightgrey",
     marginBottom: 10,
     backgroundColor: "white",
   },
   highlightName: { fontSize: 19, fontWeight: "bold" },
-  route: { fontSize: 15, marginTop: 7, color: "#333333" },
+  route: { fontSize: 15, marginTop: 7, color: "black" },
   bigTime: { fontSize: 34, fontWeight: "bold", marginTop: 10, marginBottom: 6 },
-  muted: { color: "#666666", marginTop: 4 },
-  note: { fontSize: 12, color: "#777777", marginTop: 11 },
-  source: { fontSize: 11, color: "#999999", marginTop: 14 },
+  muted: { color: "grey", marginTop: 4 },
+  note: { fontSize: 12, color: "grey", marginTop: 11 },
+  source: { fontSize: 11, color: "grey", marginTop: 14 },
   primaryButton: {
     marginTop: 17,
     paddingVertical: 13,
@@ -324,5 +317,5 @@ const styles = StyleSheet.create({
   commuteName: { fontWeight: "bold", fontSize: 15 },
   actionText: { fontWeight: "bold" },
   emptyText: { color: "grey", textAlign: "center", paddingVertical: 18 },
-  errorText: { color: "#B00020" },
+  errorText: { color: "red" },
 });

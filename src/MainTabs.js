@@ -15,9 +15,13 @@ export default function MainTabs({ themeKey, color, setThemeKey }) {
         tabBarActiveTintColor: color,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home">
+        {(props) => <HomeScreen {...props} color={color} />}
+      </Tab.Screen>
       <Tab.Screen name="Map">{() => <MapScreen color={color} />}</Tab.Screen>
-      <Tab.Screen name="Schedule" component={ScheduleScreen} />
+      <Tab.Screen name="Schedule">
+        {() => <ScheduleScreen color={color} />}
+      </Tab.Screen>
       <Tab.Screen name="Settings">
         {() => (
           <SettingsScreen

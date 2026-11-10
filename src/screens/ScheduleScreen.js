@@ -1,23 +1,7 @@
 import { useCallback, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import {ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View,} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  updateDoc,
-} from "firebase/firestore";
+import {addDoc, collection, deleteDoc, doc, getDocs, updateDoc,} from "firebase/firestore";
 import { db, firebase_auth } from "../firebaseConfig";
 
 // JavaScript Date uses 0 for Sunday and 1 for Monday.
@@ -33,12 +17,10 @@ const WEEKDAYS = [
 
 function dayLabels(days) {
   if (!Array.isArray(days)) return "No days selected";
-  return WEEKDAYS.filter((day) => days.includes(day.id))
-    .map((day) => day.label)
-    .join(", ");
+  return WEEKDAYS.filter((day) => days.includes(day.id)).map((day) => day.label).join(", ");
 }
 
-export default function ScheduleScreen({ color = "#B8243A" }) {
+export default function ScheduleScreen({ color }) {
   const scrollRef = useRef(null);
   const uid = firebase_auth.currentUser?.uid;
 
@@ -342,7 +324,7 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: 5, marginBottom: 22, color: "grey" },
   card: {
     backgroundColor: "white",
-    borderColor: "#DDDDDD",
+    borderColor: "lightgrey",
     borderWidth: 1,
     borderRadius: 12,
     padding: 16,
@@ -352,7 +334,7 @@ const styles = StyleSheet.create({
   label: { fontWeight: "600", marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: "#CCCCCC",
+    borderColor: "lightgrey",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -361,12 +343,12 @@ const styles = StyleSheet.create({
   daysRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 18 },
   dayButton: {
     borderWidth: 1,
-    borderColor: "#CCCCCC",
+    borderColor: "lightgrey",
     borderRadius: 9,
     paddingVertical: 9,
     paddingHorizontal: 10,
   },
-  dayText: { color: "#444444", fontWeight: "600" },
+  dayText: { color: "grey", fontWeight: "600" },
   selectedDayText: { color: "white" },
   primaryButton: {
     paddingVertical: 14,
@@ -375,7 +357,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: { color: "white", fontSize: 16, fontWeight: "bold" },
   cancelButton: { alignItems: "center", paddingTop: 14 },
-  cancelText: { color: "#555555", fontWeight: "600" },
+  cancelText: { color: "grey", fontWeight: "600" },
   headingRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -384,11 +366,11 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   commuteName: { fontSize: 18, fontWeight: "bold" },
-  routeText: { marginTop: 6, marginBottom: 8, color: "#333333" },
-  details: { marginTop: 3, color: "#666666" },
+  routeText: { marginTop: 6, marginBottom: 8, color: "black" },
+  details: { marginTop: 3, color: "grey" },
   actionsRow: { flexDirection: "row", gap: 25, marginTop: 15 },
   actionText: { fontWeight: "bold" },
-  deleteText: { color: "#C62828", fontWeight: "bold" },
-  errorText: { color: "#B00020", marginVertical: 10 },
+  deleteText: { color: "red", fontWeight: "bold" },
+  errorText: { color: "red", marginVertical: 10 },
   emptyText: { color: "grey", textAlign: "center", paddingVertical: 24 },
 });
