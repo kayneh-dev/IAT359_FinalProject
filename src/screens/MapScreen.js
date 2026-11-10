@@ -34,6 +34,10 @@ export default function MapScreen() {
 
     try {
       const response = await fetch( url, { headers: { "User-Agent": "CommuteCast-student-app" }} );
+      if(!response.ok){
+        alert("Bus stop server is busy, try again");
+        return;
+      }
       const data = await response.json();
       console.log("stops found: " + data.elements.length);
       setStops(data.elements);
@@ -125,6 +129,7 @@ export default function MapScreen() {
         </MapView>)
 
         : (<Text>getting location...</Text>)}
+      <Button title="Refresh stops" onPress={updateLocation} />
       {selectedStop ? (
         <View>
           <Text>{selectedStop.tags.name}</Text>
