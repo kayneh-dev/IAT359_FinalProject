@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Button,
   FlatList,
@@ -9,21 +10,71 @@ import {
   View,
 } from "react-native";
 
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
+
+import { db, firebase_auth } from "../firebaseConfig";
+
 export default function ScheduleScreen() {
-  // Store the information entered by the user
+  // State for the form inputs
   const [name, setName] = useState("");
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [time, setTime] = useState("");
   const [days, setDays] = useState("");
 
-  // Store the list of commutes
+  // State for saved commutes and editing
   const [commutes, setCommutes] = useState([]);
-
-  // Keep track of which commute is being edited
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Clear all the input fields
+  // Retrieve commutes when the screen first opens
+  useEffect(() => {
+    loadCommutes();
+  }, []);
+
+  // Read saved commutes from the signed-in user's Firestore collection
+  async function loadCommutes() {
+    const user = firebase_auth.currentUser;
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const querySnapshot = await getDocs(
+        collection(db, "users", user.uid, "commutes"),
+      );
+
+      const list = [];
+
+      querySnapshot.forEach((document) => {
+        list.push({
+          id: document.id,
+          ...document.data(),
+        });
+      });
+
+      setCommutes(list);
+    } catch (error) {
+      console.log(error.message);
+      Alert.alert("Error", "Could not load commutes: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Clear the form after adding or editing
   function clearForm() {
     setName("");
     setOrigin("");
@@ -33,9 +84,11 @@ export default function ScheduleScreen() {
     setEditingId(null);
   }
 
-  // Add a new commute or save changes to an existing commute
-  function saveCommute() {
-    // Check that all fields have been filled in
+  // Add a new commute or update an existing one
+  async function saveCommute() {
+    if (saving || loading) return;
+
+    // Make sure all fields have information
     if (
       !name.trim() ||
       !origin.trim() ||
@@ -47,43 +100,51 @@ export default function ScheduleScreen() {
       return;
     }
 
-    // If editingId is null, add a new commute
-    if (editingId === null) {
-      const newCommute = {
-        id: Date.now().toString(),
-        name: name.trim(),
-        origin: origin.trim(),
-        destination: destination.trim(),
-        time: time.trim(),
-        days: days.trim(),
-      };
+    const user = firebase_auth.currentUser;
 
-      setCommutes([...commutes, newCommute]);
-    } else {
-      // Otherwise, update the selected commute
-      const updatedCommutes = commutes.map((commute) => {
-        if (commute.id === editingId) {
-          return {
-            ...commute,
-            name: name.trim(),
-            origin: origin.trim(),
-            destination: destination.trim(),
-            time: time.trim(),
-            days: days.trim(),
-          };
-        }
-
-        return commute;
-      });
-
-      setCommutes(updatedCommutes);
+    if (!user) {
+      Alert.alert("Error", "Please sign in first.");
+      return;
     }
 
-    // Clear the fields after saving
-    clearForm();
+    // Store the information as a JavaScript object
+    const commuteData = {
+      name: name.trim(),
+      origin: origin.trim(),
+      destination: destination.trim(),
+      time: time.trim(),
+      days: days.trim(),
+    };
+
+    setSaving(true);
+
+    try {
+      if (editingId === null) {
+        // Add a new document to Firestore
+        await addDoc(
+          collection(db, "users", user.uid, "commutes"),
+          commuteData,
+        );
+      } else {
+        // Update the selected document in Firestore
+        await updateDoc(
+          doc(db, "users", user.uid, "commutes", editingId),
+          commuteData,
+        );
+      }
+
+      // Clear the form and reload the saved commutes
+      clearForm();
+      await loadCommutes();
+    } catch (error) {
+      console.log(error.message);
+      Alert.alert("Error", "Could not save commute: " + error.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  // Load an existing commute into the input fields
+  // Load the selected commute into the form
   function editCommute(commute) {
     setName(commute.name);
     setOrigin(commute.origin);
@@ -93,7 +154,7 @@ export default function ScheduleScreen() {
     setEditingId(commute.id);
   }
 
-  // Delete a selected commute
+  // Ask the user to confirm before deleting
   function deleteCommute(id) {
     Alert.alert(
       "Delete Commute",
@@ -105,112 +166,146 @@ export default function ScheduleScreen() {
         },
         {
           text: "Delete",
-          onPress: () => {
-            const updatedCommutes = commutes.filter(
-              (commute) => commute.id !== id,
-            );
-
-            setCommutes(updatedCommutes);
-
-            // Clear the form if the deleted commute was being edited
-            if (editingId === id) {
-              clearForm();
-            }
-          },
+          style: "destructive",
+          onPress: () => removeCommute(id),
         },
       ],
     );
   }
 
+  // Delete the selected document from Firestore
+  async function removeCommute(id) {
+    if (saving || loading) return;
+
+    const user = firebase_auth.currentUser;
+
+    if (!user) {
+      Alert.alert("Error", "Please sign in first.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await deleteDoc(doc(db, "users", user.uid, "commutes", id));
+
+      // Reset the form if the deleted commute was being edited
+      if (editingId === id) {
+        clearForm();
+      }
+
+      // Refresh the list
+      await loadCommutes();
+    } catch (error) {
+      console.log(error.message);
+      Alert.alert("Error", "Could not delete commute: " + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Your Regular Commutes</Text>
+    <FlatList
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      data={commutes}
+      keyExtractor={(item) => item.id}
+      ListHeaderComponent={
+        <View>
+          <Text style={styles.title}>Your Regular Commutes</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Commute Name (e.g. School)"
-        value={name}
-        onChangeText={setName}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Commute Name (e.g. School)"
+            value={name}
+            onChangeText={setName}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="From (e.g. Home)"
-        value={origin}
-        onChangeText={setOrigin}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="From (e.g. Home)"
+            value={origin}
+            onChangeText={setOrigin}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="To (e.g. SFU Burnaby)"
-        value={destination}
-        onChangeText={setDestination}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="To (e.g. SFU Burnaby)"
+            value={destination}
+            onChangeText={setDestination}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Departure Time (e.g. 08:00)"
-        value={time}
-        onChangeText={setTime}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Departure Time (e.g. 08:00)"
+            value={time}
+            onChangeText={setTime}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Days (e.g. Mon-Fri)"
-        value={days}
-        onChangeText={setDays}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Days (e.g. Mon-Fri)"
+            value={days}
+            onChangeText={setDays}
+          />
 
-      <Button
-        title={editingId === null ? "Add Commute" : "Save Changes"}
-        onPress={saveCommute}
-        color="#CC0633"
-      />
+          <Button
+            title={editingId === null ? "Add Commute" : "Save Changes"}
+            onPress={saveCommute}
+            color="#CC0633"
+            disabled={saving || loading}
+          />
 
-      {editingId !== null ? (
-        <Button title="Cancel Editing" onPress={clearForm} />
-      ) : null}
+          {editingId !== null ? (
+            <Button title="Cancel Editing" onPress={clearForm} />
+          ) : null}
 
-      <Text style={styles.subtitle}>Your Commutes</Text>
+          <Text style={styles.subtitle}>Your Commutes</Text>
 
-      <FlatList
-        data={commutes}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.commuteName}>{item.name}</Text>
-            <Text>
-              {item.origin} → {item.destination}
-            </Text>
-            <Text>Departure: {item.time}</Text>
-            <Text>Days: {item.days}</Text>
+          {loading ? <ActivityIndicator size="large" color="#CC0633" /> : null}
+        </View>
+      }
+      renderItem={({ item }) => (
+        <View style={styles.card}>
+          <Text style={styles.commuteName}>{item.name}</Text>
 
-            <View style={styles.buttonRow}>
-              <Button
-                title="Edit"
-                onPress={() => editCommute(item)}
-                color="#CC0633"
-              />
+          <Text>
+            {item.origin} to {item.destination}
+          </Text>
 
-              <Button
-                title="Delete"
-                onPress={() => deleteCommute(item.id)}
-                color="red"
-              />
-            </View>
+          <Text>Departure: {item.time}</Text>
+          <Text>Days: {item.days}</Text>
+
+          <View style={styles.buttonRow}>
+            <Button
+              title="Edit"
+              color="#CC0633"
+              disabled={saving || loading}
+              onPress={() => editCommute(item)}
+            />
+
+            <Button
+              title="Delete"
+              color="red"
+              disabled={saving || loading}
+              onPress={() => deleteCommute(item.id)}
+            />
           </View>
-        )}
-        ListEmptyComponent={<Text>No commutes added yet.</Text>}
-      />
-    </View>
+        </View>
+      )}
+      ListEmptyComponent={!loading ? <Text>No commutes added yet.</Text> : null}
+    />
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#F5F5F5",
+  },
+  content: {
+    padding: 20,
   },
   title: {
     fontSize: 24,
