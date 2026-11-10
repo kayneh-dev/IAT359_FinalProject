@@ -3,7 +3,7 @@ import {useState} from "react";
 import {Pressable, ScrollView, StyleSheet, Text, TextInput, View,} from "react-native";
 import {firebase_auth} from "../firebaseConfig";
 
-export default function SignInScreen() {
+export default function SignInScreen({ color }) {
   const [isSignUp, setIsSignUp] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -40,7 +40,7 @@ export default function SignInScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: color }]}>
         <Text style={styles.logo}>CommuteCast</Text>
         <Text style={styles.tagline}>Your weather-aware transit planner</Text>
       </View>
@@ -98,7 +98,7 @@ export default function SignInScreen() {
         )}
 
         <Pressable
-          style={styles.button}
+          style={[styles.button, { backgroundColor: color }]}
           onPress={isSignUp ? handleSignUp : handleSignIn}
         >
           <Text style={styles.buttonText}>
@@ -111,7 +111,7 @@ export default function SignInScreen() {
             {isSignUp ? "Already have an account? " : "New here? "}
           </Text>
           <Pressable onPress={() => setIsSignUp(!isSignUp)}>
-            <Text style={styles.link}>{isSignUp ? "Log In" : "Sign Up"}</Text>
+            <Text style={[styles.link, { color }]}>{isSignUp ? "Log In" : "Sign Up"}</Text>
           </Pressable>
         </View>
       </View>
