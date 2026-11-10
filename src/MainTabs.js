@@ -16,7 +16,7 @@ export default function MainTabs({ themeKey, color, setThemeKey }) {
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Map" component={MapScreen} />
+      <Tab.Screen name="Map">{() => <MapScreen color={color} />}</Tab.Screen>
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
       <Tab.Screen name="Settings">
         {() => (

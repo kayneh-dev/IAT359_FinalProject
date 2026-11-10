@@ -1,13 +1,13 @@
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
-import { Button, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { addDoc, collection, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import GtfsRealtimeBindings from "gtfs-realtime-bindings";
 import { routeNames } from "../translinkRoutes";
 
-export default function MapScreen() {
+export default function MapScreen({ color }) {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [stops, setStops] = useState([]);
   const [selectedStop, setSelectedStop] = useState(null);
@@ -147,12 +147,12 @@ export default function MapScreen() {
           {stops.filter((stop) => favourites.filter((fav) => fav.lat === stop.lat && fav.lng === stop.lon).length === 0)
             .map((stop) => {
             return (<Marker key={stop.id} coordinate={{ latitude: stop.lat, longitude: stop.lon }}
-              title={stop.tags.name} description={stop.tags.route_ref} pinColor="blue" onPress={() => setSelectedStop(stop)} />);
+              title={stop.tags.name} description={stop.tags.route_ref} pinColor={color} onPress={() => setSelectedStop(stop)} />);
           })}
 
           {favourites.map((fav) => {
             return (<Marker key={fav.id} coordinate={{ latitude: fav.lat, longitude: fav.lng }}
-              title={fav.name} pinColor="green" zIndex={1} />);
+              title={fav.name} pinColor="gold" zIndex={1} />);
           })}
 
           {buses.map((bus, i) => {
@@ -170,32 +170,69 @@ export default function MapScreen() {
         </MapView>)
 
         : (<Text>getting location...</Text>)}
-      <Button title="Refresh stops" onPress={updateLocation} />
-      {selectedStop ? (
-        <View>
-          <Text>{selectedStop.tags.name}</Text>
-          <Text>Stop number: {selectedStop.tags.ref}</Text>
-          <Text>Routes: {selectedStop.tags.route_ref}</Text>
-          <Button title="Save to favourites" onPress={saveFavourite} />
-        </View>
-      ) : null}
-      <Text>Saved stops</Text>
-      <FlatList style={styles.list} data={favourites} keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (<View style={styles.row}><TouchableOpacity onPress={() => moveToFavourite(item)}><Text>{item.name} ({item.ref})</Text></TouchableOpacity>
-          <Button title="Delete" onPress={() => deleteFavourite(item.id)} /></View>)} />
-      <Text>Nearby stops</Text>
-      <FlatList
-        style={styles.list}
-        data={stops}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => setSelectedStop(item)}>
-            <Text>{item.tags.name} ({item.tags.ref})</Text>
-          </TouchableOpacity>
-        )}
-      />
+      <View style={styles.card}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {selectedStop ? (
+            <View style={styles.section}>
+              <Text style={styles.stopName}>{selectedStop.tags.name}</Text>
+              <Text style={styles.stopInfo}>Stop #{selectedStop.tags.ref}</Text>
+              <Text style={styles.stopInfo}>Routes: {selectedStop.tags.route_ref}</Text>
+              <Pressable style={[styles.button, { borderColor: color }]} onPress={saveFavourite}>
+                <Text style={[styles.buttonText, { color }]}>Save Stop</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          <Text style={styles.heading}>Saved stops</Text>
+          {favourites.map((item) => (
+            <View key={item.id} style={styles.row}>
+              <TouchableOpacity style={{ flex: 1 }} onPress={() => moveToFavourite(item)}>
+                <Text>{item.name} ({item.ref})</Text>
+              </TouchableOpacity>
+              <Pressable style={[styles.smallButton, { borderColor: color }]} onPress={() => deleteFavourite(item.id)}>
+                <Text style={[styles.buttonText, { color }]}>Delete</Text>
+              </Pressable>
+            </View>
+          ))}
+
+          <Text style={styles.heading}>Nearby stops</Text>
+          {stops.map((item) => (
+            <TouchableOpacity key={item.id} style={styles.row} onPress={() => setSelectedStop(item)}>
+              <Text>{item.tags.name} ({item.tags.ref})</Text>
+            </TouchableOpacity>
+          ))}
+
+          <Pressable style={[styles.button, { borderColor: color }]} onPress={updateLocation}>
+            <Text style={[styles.buttonText, { color }]}>Refresh stops</Text>
+          </Pressable>
+        </ScrollView>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create( { container: { flex: 1, padding: 20 } , map: { width: "100%", height: 300 } , list: { flex: 1 } , row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" } , bus: { alignItems: "center", backgroundColor: "white", borderRadius: 3, paddingHorizontal: 1 } , busIcon: { fontSize: 11, lineHeight: 13 } , busText: { fontSize: 7, fontWeight: "bold", lineHeight: 8 } } );
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "white" },
+  map: { flex: 1 },
+  card: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 16,
+    height: "40%",
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 16,
+  },
+  section: { marginBottom: 12 },
+  stopName: { fontSize: 18, fontWeight: "bold" },
+  stopInfo: { color: "grey", marginTop: 2 },
+  heading: { fontSize: 16, fontWeight: "bold", marginTop: 8, marginBottom: 4 },
+  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
+  button: { borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, alignItems: "center", marginTop: 10 },
+  smallButton: { borderWidth: 1.5, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 14 },
+  buttonText: { fontWeight: "bold" },
+  bus: { alignItems: "center", backgroundColor: "white", borderRadius: 3, paddingHorizontal: 1 },
+  busIcon: { fontSize: 11, lineHeight: 13 },
+  busText: { fontSize: 7, fontWeight: "bold", lineHeight: 8 },
+});
