@@ -1,11 +1,9 @@
-import { Button, StyleSheet, Text, View } from "react-native";
-import { firebase_auth } from "../firebaseConfig";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
-      <Text>Home</Text>
-      <Button title="Sign Out" onPress={() => firebase_auth.signOut()} />
+      <Text style={styles.title}>Home</Text>
     </View>
   );
 }
@@ -15,5 +13,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "white",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
   },
 });
