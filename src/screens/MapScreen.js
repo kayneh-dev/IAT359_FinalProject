@@ -1,4 +1,5 @@
 import * as Location from "expo-location";
+import * as Battery from "expo-battery";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
@@ -14,6 +15,8 @@ export default function MapScreen({ color }) {
   const [favourites, setFavourites] = useState([]);
   const [region, setRegion] = useState(null);
   const [buses, setBuses] = useState([]);
+  const [batteryLevel,setBatteryLevel] = useState(1);
+  const isBatteryLow = batteryLevel <= 0.2;
 
   async function updateLocation() {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -118,13 +121,25 @@ export default function MapScreen({ color }) {
     updateFavourites();
   } , [] );
 
+  useEffect(() => {
+    async function getBattery(){
+      const level = await Battery.getBatteryLevelAsync();
+      setBatteryLevel(level);
+    }
+    getBattery();
+    const subscription = Battery.addBatteryLevelListener((event) => {
+      setBatteryLevel(event.batteryLevel);
+    });
+    return () => subscription.remove();
+  },[]);
+
   useEffect( () => {
     if(currentLocation === null){
       return;
     }
-    const timer = setInterval(() => updateBuses(currentLocation.coords.latitude, currentLocation.coords.longitude), 10000);
+    const timer = setInterval(() => updateBuses(currentLocation.coords.latitude, currentLocation.coords.longitude), isBatteryLow ? 30000 : 10000);
     return () => clearInterval(timer);
-  } , [currentLocation] );
+  } , [currentLocation,isBatteryLow] );
 
 
   return (
@@ -170,6 +185,7 @@ export default function MapScreen({ color }) {
         </MapView>)
 
         : (<Text>getting location...</Text>)}
+         <Text style={styles.batteryText}>Battery {Math.round(batteryLevel*100)}%{isBatteryLow ? " - low, buses update every 30s" : ""}</Text>
       <View style={styles.card}>
         <ScrollView showsVerticalScrollIndicator={false}>
           {selectedStop ? (
@@ -214,6 +230,7 @@ export default function MapScreen({ color }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "white" },
   map: { flex: 1 },
+  batteryText: { position: "absolute",top: 60,left: 16,color: "red",padding: 4,backgroundColor: "white" },
   card: {
     position: "absolute",
     left: 16,
